@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Maps and Places Autocomplete</title>
+    <script>
+        async function init() {
+            await customElements.whenDefined('gmp-map');
+
+            const map = document.querySelector('gmp-map');
+            const marker = document.querySelector('gmp-advanced-marker');
+            const placePicker = document.querySelector('gmpx-place-picker');
+            const infowindow = new google.maps.InfoWindow();
+
+            map.innerMap.setOptions({
+                mapTypeControl: false
+            });
+
+            placePicker.addEventListener('gmpx-placechange', () => {
+                const place = placePicker.value;
+
+                if (!place.location) {
+                    window.alert(
+                        "No details available for input: '" + place.name + "'"
+                    );
+                    infowindow.close();
+                    marker.position = null;
+                    return;
+                }
+
+                if (place.viewport) {
+                    map.innerMap.fitBounds(place.viewport);
+                } else {
+                    map.center = place.location;
+                    map.zoom = 17;
+                }
+
+                marker.position = place.location;
+                infowindow.setContent(
+                    `<strong>${place.displayName}</strong><br>
+             <span>${place.formattedAddress}</span>
+          `);
+                infowindow.open(map.innerMap, marker);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+
+    <div id="map" style="height: 500px;"></div>
+
+    <script>
+        mapboxgl.accessToken = '';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            center: [76.2711, 10.8505],
+            zoom: 7
+        });
+
+        // Add Google Maps as an overlay
+        map.on('load', function () {
+            map.addSource('google-maps', {
+                type: 'raster',
+                tiles: [
+                    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                ],
+                tileSize: 256
+            });
+
+            map.addLayer({
+                id: 'google-maps-layer',
+                type: 'raster',
+                source: 'google-maps',
+                paint: {}
+            });
+        });
+    </script>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .place-picker-container {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <gmpx-api-loader key=""
+        solution-channel="GMP_GE_mapsandplacesautocomplete_v2">
+    </gmpx-api-loader>
+    <gmp-map center="40.749933,-73.98633" zoom="13" map-id="DEMO_MAP_ID">
+        <div slot="control-block-start-inline-start" class="place-picker-container">
+            <gmpx-place-picker placeholder="Enter an address"></gmpx-place-picker>
+        </div>
+        <gmp-advanced-marker></gmp-advanced-marker>
+    </gmp-map>
+</body>
+
+</html>
