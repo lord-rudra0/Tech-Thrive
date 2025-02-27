@@ -21,15 +21,15 @@ def analyze_data(location=None, density_threshold=None, is_country=False):
             'tree': 'Country tree cover loss' if is_country else 'Subnational 2 tree cover loss'
         }
         
-        carbon_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', sheet_name=sheets['carbon'])
-        tree_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', sheet_name=sheets['tree'])
+        carbon_data = pd.read_excel('IND.xlsx', sheet_name=sheets['carbon'])
+        tree_data = pd.read_excel('IND.xlsx', sheet_name=sheets['tree'])
         
         if not is_country:
             if location.lower() in [str(x).lower() for x in carbon_data['state'].dropna()]:
                 sheets['carbon'] = 'Subnational 1 carbon data'
                 sheets['tree'] = 'Subnational 1 tree cover loss'
-                carbon_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', sheet_name=sheets['carbon'])
-                tree_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', sheet_name=sheets['tree'])
+                carbon_data = pd.read_excel('IND.xlsx', sheet_name=sheets['carbon'])
+                tree_data = pd.read_excel('IND.xlsx', sheet_name=sheets['tree'])
                 location_type = 'state'
             elif location.lower() in [str(x).lower() for x in carbon_data['district'].dropna()]:
                 location_type = 'district'
@@ -159,7 +159,7 @@ def analyze_data(location=None, density_threshold=None, is_country=False):
 def get_available_locations():
     try:
         print("Accessing available locations...") # Debug log
-        carbon_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', 
+        carbon_data = pd.read_excel('IND.xlsx', 
                                   sheet_name='Subnational 2 carbon data')
         
         states = sorted(set(str(x).lower() for x in carbon_data['state'].dropna()))
