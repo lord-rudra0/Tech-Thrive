@@ -1,0 +1,11 @@
+iso3_country,sector,subsector,start_time,end_time,gas,emissions_quantity,emissions_quantity_units,temporal_granularity,created_date,modified_date
+IND,forestry-and-land-use,net-shrubgrass,2015-01-01 00:00:00,2015-12-31 00:00:00,co2e_100yr,-3773450.57819999,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2016-01-01 00:00:00,2016-12-31 00:00:00,co2e_100yr,5270751.401943989,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2017-01-01 00:00:00,2017-12-31 00:00:00,co2e_100yr,5664346.219853996,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2018-01-01 00:00:00,2018-12-31 00:00:00,co2e_100yr,1087131.9075420008,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2019-01-01 00:00:00,2019-12-31 00:00:00,co2e_100yr,-14300679.515999973,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2020-01-01 00:00:00,2020-12-31 00:00:00,co2e_100yr,12624338.097029982,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2021-01-01 00:00:00,2021-12-31 00:00:00,co2e_100yr,-1745976.9742660066,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2022-01-01 00:00:00,2022-12-31 00:00:00,co2e_100yr,-34269392.63500398,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2023-01-01 00:00:00,2023-12-31 00:00:00,co2e_100yr,-544581.9912700023,,annual,,
+IND,forestry-and-land-use,net-shrubgrass,2024-01-01 00:00:00,2024-12-31 00:00:00,co2e_100yr,-544581.9912700024,,annual,,

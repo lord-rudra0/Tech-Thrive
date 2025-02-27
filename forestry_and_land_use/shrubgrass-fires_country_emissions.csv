@@ -1,0 +1,11 @@
+iso3_country,sector,subsector,start_time,end_time,gas,emissions_quantity,emissions_quantity_units,temporal_granularity,created_date,modified_date
+IND,forestry-and-land-use,shrubgrass-fires,2015-01-01 00:00:00,2015-12-31 00:00:00,co2e_100yr,3472544.3618817995,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2016-01-01 00:00:00,2016-12-31 00:00:00,co2e_100yr,9661417.983584397,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2017-01-01 00:00:00,2017-12-31 00:00:00,co2e_100yr,6109296.546908028,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2018-01-01 00:00:00,2018-12-31 00:00:00,co2e_100yr,8394489.317385199,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2019-01-01 00:00:00,2019-12-31 00:00:00,co2e_100yr,5970388.808124608,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2020-01-01 00:00:00,2020-12-31 00:00:00,co2e_100yr,5502982.216258396,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2021-01-01 00:00:00,2021-12-31 00:00:00,co2e_100yr,18062420.4702121,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2022-01-01 00:00:00,2022-12-31 00:00:00,co2e_100yr,54753065.2679851,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2023-01-01 00:00:00,2023-12-31 00:00:00,co2e_100yr,3421280.6886427,,annual,,
+IND,forestry-and-land-use,shrubgrass-fires,2024-01-01 00:00:00,2024-12-31 00:00:00,co2e_100yr,3421280.688642701,,annual,,

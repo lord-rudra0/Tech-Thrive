@@ -1,0 +1,11 @@
+iso3_country,sector,subsector,start_time,end_time,gas,emissions_quantity,emissions_quantity_units,temporal_granularity,created_date,modified_date
+IND,fluorinated-gases,fluorinated-gases,2015-01-01 00:00:00,2015-12-31 00:00:00,co2e_100yr,47398034.97652798,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2016-01-01 00:00:00,2016-12-31 00:00:00,co2e_100yr,51517346.45719996,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2017-01-01 00:00:00,2017-12-31 00:00:00,co2e_100yr,55729732.21447197,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2018-01-01 00:00:00,2018-12-31 00:00:00,co2e_100yr,59612235.26777997,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2019-01-01 00:00:00,2019-12-31 00:00:00,co2e_100yr,63680737.040911965,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2020-01-01 00:00:00,2020-12-31 00:00:00,co2e_100yr,67735200.56863996,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2021-01-01 00:00:00,2021-12-31 00:00:00,co2e_100yr,72064812.64109795,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2022-01-01 00:00:00,2022-12-31 00:00:00,co2e_100yr,72064812.64109795,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2023-01-01 00:00:00,2023-12-31 00:00:00,co2e_100yr,72064812.64109795,,annual,,
+IND,fluorinated-gases,fluorinated-gases,2024-01-01 00:00:00,2024-12-31 00:00:00,co2e_100yr,72064812.64109795,,annual,,

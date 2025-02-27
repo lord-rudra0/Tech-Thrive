@@ -1,0 +1,11 @@
+iso3_country,sector,subsector,start_time,end_time,gas,emissions_quantity,emissions_quantity_units,temporal_granularity,created_date,modified_date
+IND,forestry-and-land-use,net-forest-land,2015-01-01 00:00:00,2015-12-31 00:00:00,co2e_100yr,-10934069.824185086,,annual,,
+IND,forestry-and-land-use,net-forest-land,2016-01-01 00:00:00,2016-12-31 00:00:00,co2e_100yr,67171913.45989503,,annual,,
+IND,forestry-and-land-use,net-forest-land,2017-01-01 00:00:00,2017-12-31 00:00:00,co2e_100yr,29855201.36712997,,annual,,
+IND,forestry-and-land-use,net-forest-land,2018-01-01 00:00:00,2018-12-31 00:00:00,co2e_100yr,-113212520.57613002,,annual,,
+IND,forestry-and-land-use,net-forest-land,2019-01-01 00:00:00,2019-12-31 00:00:00,co2e_100yr,4220835.973289906,,annual,,
+IND,forestry-and-land-use,net-forest-land,2020-01-01 00:00:00,2020-12-31 00:00:00,co2e_100yr,-98677719.0455299,,annual,,
+IND,forestry-and-land-use,net-forest-land,2021-01-01 00:00:00,2021-12-31 00:00:00,co2e_100yr,-23157237.306200087,,annual,,
+IND,forestry-and-land-use,net-forest-land,2022-01-01 00:00:00,2022-12-31 00:00:00,co2e_100yr,-66258252.20271,,annual,,
+IND,forestry-and-land-use,net-forest-land,2023-01-01 00:00:00,2023-12-31 00:00:00,co2e_100yr,97574705.08611505,,annual,,
+IND,forestry-and-land-use,net-forest-land,2024-01-01 00:00:00,2024-12-31 00:00:00,co2e_100yr,97574705.08611506,,annual,,

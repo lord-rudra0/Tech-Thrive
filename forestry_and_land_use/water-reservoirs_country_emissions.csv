@@ -1,0 +1,11 @@
+iso3_country,sector,subsector,start_time,end_time,gas,emissions_quantity,emissions_quantity_units,temporal_granularity,created_date,modified_date
+IND,forestry-and-land-use,water-reservoirs,2015-01-01 00:00:00,2015-12-31 00:00:00,co2e_100yr,7949966.029295945,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2016-01-01 00:00:00,2016-12-31 00:00:00,co2e_100yr,7950340.522353927,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2017-01-01 00:00:00,2017-12-31 00:00:00,co2e_100yr,8386735.906215492,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2018-01-01 00:00:00,2018-12-31 00:00:00,co2e_100yr,4711637.730360128,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2019-01-01 00:00:00,2019-12-31 00:00:00,co2e_100yr,7015582.780619633,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2020-01-01 00:00:00,2020-12-31 00:00:00,co2e_100yr,8294593.559151469,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2021-01-01 00:00:00,2021-12-31 00:00:00,co2e_100yr,7598600.588775162,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2022-01-01 00:00:00,2022-12-31 00:00:00,co2e_100yr,6419939.867489155,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2023-01-01 00:00:00,2023-12-31 00:00:00,co2e_100yr,7925620.096571282,,annual,,
+IND,forestry-and-land-use,water-reservoirs,2024-01-01 00:00:00,2024-12-31 00:00:00,co2e_100yr,7020487.160209137,,annual,,
