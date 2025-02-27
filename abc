@@ -1,0 +1,96 @@
+import google.generativeai as genai
+import pandas as pd
+from datetime import datetime
+
+# Configure the Gemini API
+genai.configure(api_key="AIzaSyB7FUKich_swFtezWkwr6U6xle09bWwIwM")
+
+def get_forest_data(location):
+    try:
+        # Read the Excel file for forest area data
+        forest_df = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', sheet_name='Subnational 2 tree cover loss')
+        
+        # Print column names to see what's available
+        print("Available columns:", forest_df.columns.tolist())
+        
+        # Assuming the location column might have a different name, let's find it
+        location_columns = [col for col in forest_df.columns if 'state' in col.lower() or 'district' in col.lower()]
+        if location_columns:
+            location_column = location_columns[0]
+            location_data = forest_df[forest_df[location_column].str.contains(location, case=False, na=False)]
+        else:
+            return "Could not find location column in the dataset."
+        
+        if location_data.empty:
+            return "Location not found in the database."
+        
+        # Get the year columns (assuming they are numeric column names)
+        year_columns = [col for col in forest_df.columns if str(col).isdigit() and 2010 <= int(col) <= 2014]
+        
+        if not year_columns:
+            return "Could not find year data between 2011-2014"
+            
+        # Extract forest area data for available years
+        forest_area = {
+            'forest_area': location_data[year_columns].values.tolist()[0],
+            'years': [int(year) for year in year_columns]
+        }
+        
+        # Use Gemini API to get CO2 emissions and O2 production estimates
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Generate CO2 emissions data
+        co2_prompt = f"Generate realistic annual CO2 emissions in tonnes for forests in {location} from 2011 to 2014 based on typical Indian forest emissions. Return only numbers separated by commas."
+        co2_response = model.generate_content(co2_prompt)
+        co2_emissions = [float(x.strip()) for x in co2_response.text.split(',')]
+        
+        # Generate O2 production data
+        o2_prompt = f"Generate realistic annual O2 production in tonnes for forests in {location} from 2010 to 2024 based on typical Indian forest oxygen production. Return only numbers separated by commas."
+        o2_response = model.generate_content(o2_prompt)
+        o2_production = [float(x.strip()) for x in o2_response.text.split(',')]
+        
+        return {
+            'location': location,
+            'forest_area_data': {
+                'years': forest_area['years'],
+                'area_sq_km': forest_area['forest_area']
+            },
+            'co2_emissions': {
+                'years': list(range(2011, 2015)),
+                'emissions_tonnes': co2_emissions
+            },
+            'o2_production': {
+                'years': list(range(2010, 2025)),
+                'production_tonnes': o2_production
+            }
+        }
+        
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def main():
+    # Get input from user
+    location = input("Enter the name of an Indian district or state: ")
+    
+    # Get the data
+    result = get_forest_data(location)
+    
+    # Print the results
+    if isinstance(result, dict):
+        print(f"\nForest Data for {result['location']}:")
+        print("\nForest Area (sq km):")
+        for year, area in zip(result['forest_area_data']['years'], result['forest_area_data']['area_sq_km']):
+            print(f"{year}: {area:.2f}")
+            
+        print("\nCO2 Emissions (tonnes):")
+        for year, emission in zip(result['co2_emissions']['years'], result['co2_emissions']['emissions_tonnes']):
+            print(f"{year}: {emission:.2f}")
+            
+        print("\nO2 Production (tonnes):")
+        for year, production in zip(result['o2_production']['years'], result['o2_production']['production_tonnes']):
+            print(f"{year}: {production:.2f}")
+    else:
+        print(result)
+
+if __name__ == "__main__":
+    main()
