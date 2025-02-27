@@ -164,43 +164,117 @@ def display_results(data):
     print(f"Tree Cover Density Threshold: {data['density_threshold']}%")
     print("=" * 80)
     
-    # Display baseline statistics
-    print("\nBaseline Statistics:")
+    # Display Forest Statistics
+    print("\nForest Statistics:")
     print("-" * 80)
-    baseline_data = []
-    for metric, info in data['baseline_stats'].items():
-        baseline_data.append([metric, info['formatted']])
-    print(tabulate(baseline_data, headers=['Metric', 'Value'], 
-                  tablefmt='grid'))
+    forest_stats = [
+        ['Tree Cover Extent 2000', data['baseline_stats']['Tree Cover Extent 2000']['formatted']],
+        ['Tree Cover Extent 2010', data['baseline_stats']['Tree Cover Extent 2010']['formatted']],
+        ['Tree Cover Gain (2000-2020)', data['baseline_stats']['Tree Cover Gain (2000-2020)']['formatted']]
+    ]
+    print(tabulate(forest_stats, headers=['Metric', 'Value'], tablefmt='grid'))
 
-    # Display yearly data
+    # Display Carbon Statistics
+    print("\nCarbon Statistics:")
+    print("-" * 80)
+    carbon_stats = [
+        ['Carbon Stocks', data['baseline_stats']['Carbon Stocks']['formatted']],
+        ['Carbon Density', data['baseline_stats']['Carbon Density']['formatted']]
+    ]
+    print(tabulate(carbon_stats, headers=['Metric', 'Value'], tablefmt='grid'))
+
+    # Display yearly data in two separate tables
     if data['yearly_tree_loss']:
+        # Forest Loss Table
         print("\nYearly Tree Cover Loss (2001-2023):")
         print("-" * 80)
-        yearly_rows = []
+        forest_rows = []
+        total_loss = 0
+        max_loss_year = None
+        max_loss = 0
+        
         for year in sorted(data['yearly_tree_loss'].keys()):
-            emissions = data['yearly_emissions'].get(year, {'formatted': 'No data'})
-            tree_loss = data['yearly_tree_loss'][year]
-            yearly_rows.append([
+            loss_value = data['yearly_tree_loss'][year]['value']
+            if not pd.isna(loss_value):
+                total_loss += loss_value
+                if loss_value > max_loss:
+                    max_loss = loss_value
+                    max_loss_year = year
+            forest_rows.append([
                 year,
-                tree_loss['formatted'],
-                emissions['formatted']
+                data['yearly_tree_loss'][year]['formatted']
             ])
         
-        print(tabulate(yearly_rows, 
-                      headers=['Year', 'Tree Cover Loss', 'Carbon Emissions'],
-                      tablefmt='grid'))
+        print(tabulate(forest_rows, headers=['Year', 'Tree Cover Loss'], tablefmt='grid'))
 
-    # Add insights
-    print("\nKey Insights:")
+        # Carbon Emissions Table
+        print("\nYearly Carbon Emissions (2001-2023):")
+        print("-" * 80)
+        carbon_rows = []
+        total_emissions = 0
+        max_emissions_year = None
+        max_emissions = 0
+        
+        for year in sorted(data['yearly_emissions'].keys()):
+            emissions_data = data['yearly_emissions'].get(year, {'value': 0, 'formatted': 'No data'})
+            if not pd.isna(emissions_data['value']):
+                total_emissions += emissions_data['value']
+                if emissions_data['value'] > max_emissions:
+                    max_emissions = emissions_data['value']
+                    max_emissions_year = year
+            carbon_rows.append([
+                year,
+                emissions_data['formatted']
+            ])
+        
+        print(tabulate(carbon_rows, headers=['Year', 'Carbon Emissions'], tablefmt='grid'))
+
+    # Comprehensive Analysis
+    print("\nComprehensive Analysis:")
+    print("=" * 80)
     stats = data['baseline_stats']
-    total_loss = sum(data['yearly_tree_loss'][year]['value'] for year in data['yearly_tree_loss'] if not pd.isna(data['yearly_tree_loss'][year]['value']))
     
-    print(f"1. Forest Coverage: At {data['density_threshold']}% density threshold, {data['location']} had {stats['Tree Cover Extent 2000']['formatted']} of forest cover in 2000")
-    print(f"2. Carbon Storage: These forests store {stats['Carbon Stocks']['formatted']} of carbon")
-    print(f"3. Storage Efficiency: The average carbon density is {stats['Carbon Density']['formatted']}")
-    print(f"4. Forest Change: The area gained {stats['Tree Cover Gain (2000-2020)']['formatted']} between 2000-2020")
-    print(f"5. Total Loss: The total tree cover loss from 2001-2023 is {format_value(total_loss, 'hectares')}")
+    # Forest Cover Change Analysis
+    extent_2000 = stats['Tree Cover Extent 2000']['value']
+    extent_2010 = stats['Tree Cover Extent 2010']['value']
+    gain_2020 = stats['Tree Cover Gain (2000-2020)']['value']
+    
+    decade_change = extent_2010 - extent_2000
+    decade_change_percent = (decade_change / extent_2000 * 100) if extent_2000 != 0 else 0
+    
+    print("\n1. Forest Cover Trends:")
+    print(f"   • Initial forest cover (2000): {stats['Tree Cover Extent 2000']['formatted']}")
+    print(f"   • Decade change (2000-2010): {format_value(decade_change, 'hectares')} ({decade_change_percent:.1f}%)")
+    print(f"   • Total gain (2000-2020): {stats['Tree Cover Gain (2000-2020)']['formatted']}")
+    print(f"   • Total loss (2001-2023): {format_value(total_loss, 'hectares')}")
+    if max_loss_year:
+        print(f"   • Highest annual loss: {format_value(max_loss, 'hectares')} in {max_loss_year}")
+
+    print("\n2. Carbon Storage and Emissions:")
+    print(f"   • Total carbon stocks: {stats['Carbon Stocks']['formatted']}")
+    print(f"   • Storage efficiency: {stats['Carbon Density']['formatted']}")
+    if max_emissions_year:
+        print(f"   • Highest emissions: {format_value(max_emissions, 'Mg CO₂e')} in {max_emissions_year}")
+    print(f"   • Total emissions (2001-2023): {format_value(total_emissions, 'Mg CO₂e')}")
+
+    print("\n3. Key Findings:")
+    # Calculate net forest change
+    net_change = gain_2020 - total_loss
+    net_change_percent = (net_change / extent_2000 * 100) if extent_2000 != 0 else 0
+    
+    print(f"   • Net forest change: {format_value(net_change, 'hectares')} ({net_change_percent:.1f}%)")
+    print(f"   • Average annual loss: {format_value(total_loss/23, 'hectares')} per year")
+    print(f"   • Average carbon density: {stats['Carbon Density']['formatted']}")
+    
+    # Forest health indicator
+    if net_change > 0:
+        health_status = "Forest Expansion"
+    elif net_change < 0:
+        health_status = "Forest Decline"
+    else:
+        health_status = "Stable Forest"
+    
+    print(f"   • Forest Health Status: {health_status}")
 
 def main():
     while True:
