@@ -21,12 +21,24 @@ def analyze_forest_data(location, density_threshold=None):
         # Read both sheets
         carbon_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', 
                                   sheet_name='Subnational 2 carbon data')
+        tree_data_state = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', 
+                                  sheet_name='Subnational 1 tree cover loss')
+        tree_data_district = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', 
+                                  sheet_name='Subnational 2 tree cover loss')
+        
+        print("\nColumns in Subnational 1 tree cover loss sheet:")
+        print("=" * 80)
+        for col in tree_data_state.columns:
+            print(col)
+        
         
         # Check if we're looking for district or state data
         if location.lower() in [str(x).lower() for x in carbon_data['district'].dropna()]:
             location_type = 'district'
+            tree_data = tree_data_district
         elif location.lower() in [str(x).lower() for x in carbon_data['state'].dropna()]:
             location_type = 'state'
+            tree_data = tree_data_state
             # Switch to Subnational 1 data for states
             carbon_data = pd.read_excel('C:/Users/prata/Tech-Thrive/IND.xlsx', 
                                       sheet_name='Subnational 1 carbon data')
@@ -35,8 +47,9 @@ def analyze_forest_data(location, density_threshold=None):
 
         # Filter data for the specified location
         carbon_loc_data = carbon_data[carbon_data[location_type].str.contains(location, case=False, na=False)]
+        tree_loc_data = tree_data[tree_data[location_type].str.contains(location, case=False, na=False)]
 
-        if carbon_loc_data.empty:
+        if carbon_loc_data.empty or tree_loc_data.empty:
             return "No data found for the specified location."
 
         # Get available density thresholds for this location
@@ -54,11 +67,15 @@ def analyze_forest_data(location, density_threshold=None):
         density_data = carbon_loc_data[
             carbon_loc_data['umd_tree_cover_density_2000__threshold'] == density_threshold
         ]
+        tree_density_data = tree_loc_data[
+            tree_loc_data['threshold'] == density_threshold
+        ]
 
-        if density_data.empty:
+        if density_data.empty or tree_density_data.empty:
             return f"No data found for density threshold {density_threshold}%"
 
         row_data = density_data.iloc[0]
+        tree_row_data = tree_density_data.iloc[0]
 
         # Basic stats
         stats = {
@@ -76,15 +93,41 @@ def analyze_forest_data(location, density_threshold=None):
                 'value': row_data['avg_gfw_aboveground_carbon_stocks_2000__Mg_C_ha-1'],
                 'formatted': format_value(row_data['avg_gfw_aboveground_carbon_stocks_2000__Mg_C_ha-1'], 'Mg C/ha'),
                 'unit': 'Mg C/ha'
+            },
+            'Tree Cover Extent 2000': {
+                'value': tree_row_data['extent_2000_ha'],
+                'formatted': format_value(tree_row_data['extent_2000_ha'], 'hectares'),
+                'unit': 'ha'
+            },
+            'Tree Cover Extent 2010': {
+                'value': tree_row_data['extent_2010_ha'],
+                'formatted': format_value(tree_row_data['extent_2010_ha'], 'hectares'),
+                'unit': 'ha'
+            },
+            'Tree Cover Gain (2000-2020)': {
+                'value': tree_row_data['gain_2000-2020_ha'],
+                'formatted': format_value(tree_row_data['gain_2000-2020_ha'], 'hectares'),
+                'unit': 'ha'
             }
         }
         
+        # Yearly tree cover loss data
+        yearly_tree_loss = {}
+        for year in range(2001, 2024):
+            col = f'tc_loss_ha_{year}'
+            if col in tree_row_data:
+                yearly_tree_loss[year] = {
+                    'value': tree_row_data[col],
+                    'formatted': format_value(tree_row_data[col], 'hectares'),
+                    'unit': 'ha'
+                }
+
         # Yearly emissions data
-        yearly_data = {}
+        yearly_emissions = {}
         for year in range(2001, 2024):
             col = f'gfw_forest_carbon_gross_emissions_{year}__Mg_CO2e'
             if col in row_data:
-                yearly_data[year] = {
+                yearly_emissions[year] = {
                     'value': row_data[col],
                     'formatted': format_value(row_data[col], 'Mg CO₂e'),
                     'unit': 'Mg CO₂e'
@@ -95,7 +138,8 @@ def analyze_forest_data(location, density_threshold=None):
             'location_type': location_type,
             'density_threshold': density_threshold,
             'baseline_stats': stats,
-            'yearly_data': yearly_data
+            'yearly_emissions': yearly_emissions,
+            'yearly_tree_loss': yearly_tree_loss
         }
 
     except Exception as e:
@@ -116,12 +160,12 @@ def display_results(data):
         print("\nPlease select a density threshold to view detailed data.")
         return
 
-    print(f"\nForest Carbon Analysis for {data['location']} ({data['location_type']})")
+    print(f"\nForest Analysis for {data['location']} ({data['location_type']})")
     print(f"Tree Cover Density Threshold: {data['density_threshold']}%")
     print("=" * 80)
     
     # Display baseline statistics
-    print("\nBaseline Statistics (Year 2000):")
+    print("\nBaseline Statistics:")
     print("-" * 80)
     baseline_data = []
     for metric, info in data['baseline_stats'].items():
@@ -129,25 +173,34 @@ def display_results(data):
     print(tabulate(baseline_data, headers=['Metric', 'Value'], 
                   tablefmt='grid'))
 
-    # Display yearly emissions if available
-    if data['yearly_data']:
-        print("\nYearly Forest Carbon Emissions (2001-2023):")
+    # Display yearly data
+    if data['yearly_tree_loss']:
+        print("\nYearly Tree Cover Loss (2001-2023):")
         print("-" * 80)
         yearly_rows = []
-        for year in sorted(data['yearly_data'].keys()):
-            year_data = data['yearly_data'][year]
-            yearly_rows.append([year, year_data['formatted']])
+        for year in sorted(data['yearly_tree_loss'].keys()):
+            emissions = data['yearly_emissions'].get(year, {'formatted': 'No data'})
+            tree_loss = data['yearly_tree_loss'][year]
+            yearly_rows.append([
+                year,
+                tree_loss['formatted'],
+                emissions['formatted']
+            ])
         
         print(tabulate(yearly_rows, 
-                      headers=['Year', 'Emissions'],
+                      headers=['Year', 'Tree Cover Loss', 'Carbon Emissions'],
                       tablefmt='grid'))
 
     # Add insights
     print("\nKey Insights:")
     stats = data['baseline_stats']
-    print(f"1. Forest Coverage: At {data['density_threshold']}% density threshold, {data['location']} has {stats['Tree Cover Area']['formatted']} of forest cover")
+    total_loss = sum(data['yearly_tree_loss'][year]['value'] for year in data['yearly_tree_loss'] if not pd.isna(data['yearly_tree_loss'][year]['value']))
+    
+    print(f"1. Forest Coverage: At {data['density_threshold']}% density threshold, {data['location']} had {stats['Tree Cover Extent 2000']['formatted']} of forest cover in 2000")
     print(f"2. Carbon Storage: These forests store {stats['Carbon Stocks']['formatted']} of carbon")
     print(f"3. Storage Efficiency: The average carbon density is {stats['Carbon Density']['formatted']}")
+    print(f"4. Forest Change: The area gained {stats['Tree Cover Gain (2000-2020)']['formatted']} between 2000-2020")
+    print(f"5. Total Loss: The total tree cover loss from 2001-2023 is {format_value(total_loss, 'hectares')}")
 
 def main():
     while True:
