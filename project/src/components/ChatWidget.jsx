@@ -6,42 +6,65 @@ const ChatWidget = ({ onClose }) => {
     { id: 1, text: "Hello! I'm ForestWatch Assistant. How can I help you with forest monitoring today?", isUser: false }
   ]);
   const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = (e) => {
+  const sendMessageToBackend = async (message) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.text();
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      return 'Sorry, I encountered an error. Please try again.';
+    }
+  };
+
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (newMessage.trim() === '') return;
     
     // Add user message
     const userMessage = { id: Date.now(), text: newMessage, isUser: true };
-    setMessages([...messages, userMessage]);
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setNewMessage('');
+    setIsLoading(true);
     
-    // Simulate response (in a real app, this would call an API)
-    setTimeout(() => {
-      const botResponses = {
-        'hello': "Hi there! How can I help you with forest monitoring?",
-        'forest': "Forests are crucial ecosystems that provide habitat for biodiversity, regulate climate, and support human livelihoods.",
-        'data': "Our data comes from satellite imagery and is updated regularly to track forest cover changes.",
-        'help': "You can use our dashboard to view forest cover data by state or district, and analyze trends over time."
+    try {
+      // Get response from backend
+      const botReply = await sendMessageToBackend(newMessage);
+      
+      const botMessage = { 
+        id: Date.now() + 1, 
+        text: botReply, 
+        isUser: false 
       };
-      
-      let botReply = "I'm not sure how to respond to that. Try asking about forest data, monitoring, or how to use our dashboard.";
-      
-      // Simple keyword matching
-      for (const [keyword, response] of Object.entries(botResponses)) {
-        if (newMessage.toLowerCase().includes(keyword)) {
-          botReply = response;
-          break;
-        }
-      }
-      
-      const botMessage = { id: Date.now() + 1, text: botReply, isUser: false };
       setMessages(prevMessages => [...prevMessages, botMessage]);
-    }, 1000);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = { 
+        id: Date.now() + 1, 
+        text: "I'm sorry, I encountered an error. Please try again.", 
+        isUser: false 
+      };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed bottom-20 right-6 w-80 h-96 bg-white rounded-lg shadow-xl flex flex-col z-50 overflow-hidden">
+    <div className="fixed bottom-20 right-6 w-96 h-[32rem] bg-white rounded-lg shadow-xl flex flex-col z-50 overflow-hidden">
       <div className="bg-green-700 text-white p-3 flex justify-between items-center">
         <h3 className="font-medium">ForestWatch Assistant</h3>
         <button onClick={onClose} className="text-white hover:text-green-200">
@@ -56,7 +79,7 @@ const ChatWidget = ({ onClose }) => {
             className={`mb-3 ${message.isUser ? 'text-right' : 'text-left'}`}
           >
             <div 
-              className={`inline-block px-3 py-2 rounded-lg ${
+              className={`inline-block px-3 py-2 rounded-lg max-w-[80%] ${
                 message.isUser 
                   ? 'bg-green-600 text-white rounded-br-none' 
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
@@ -66,6 +89,11 @@ const ChatWidget = ({ onClose }) => {
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="text-center text-gray-500">
+            <div className="animate-pulse">Thinking...</div>
+          </div>
+        )}
       </div>
       
       <form onSubmit={handleSendMessage} className="border-t p-3 flex">
@@ -75,10 +103,14 @@ const ChatWidget = ({ onClose }) => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type your message..."
           className="flex-grow px-3 py-2 border rounded-l-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+          disabled={isLoading}
         />
         <button 
           type="submit"
-          className="bg-green-600 text-white px-3 py-2 rounded-r-lg hover:bg-green-700"
+          className={`${
+            isLoading ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'
+          } text-white px-3 py-2 rounded-r-lg transition-colors`}
+          disabled={isLoading}
         >
           <Send size={18} />
         </button>

@@ -1,11 +1,31 @@
-import pandas as pd
-import numpy as np
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+from datetime import datetime
+import json
+import requests
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-# Enable CORS for all domains on all routes
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app)
+
+# Configure API keys
+GEMINI_KEY = os.getenv('GEMINI_API_KEY')
+SEARCH_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
+SEARCH_ENGINE_ID = os.getenv('GOOGLE_SEARCH_ENGINE_ID')
+
+# Configure Gemini
+genai.configure(api_key=GEMINI_KEY)
+
+# Initialize the model with the correct name
+try:
+    model = genai.GenerativeModel('gemini-2.0-flash')  # Updated model name
+except Exception as e:
+    print(f"Error initializing Gemini model: {str(e)}")
 
 def format_value(value, unit):
     if pd.isna(value): return "No data"
@@ -13,6 +33,45 @@ def format_value(value, unit):
     elif abs(value) >= 1e6: return f"{value/1e6:,.2f} M {unit}"
     elif abs(value) >= 1e3: return f"{value/1e3:,.2f} K {unit}"
     return f"{value:,.2f} {unit}"
+
+def search_news(location):
+    try:
+        search_query = f"forest conservation and carbon emissions and air pollution and air quality news in {location}"
+        response = requests.get(
+            "https://www.googleapis.com/customsearch/v1",
+            params={
+                "key": os.getenv('GOOGLE_SEARCH_API_KEY'),
+                "cx": os.getenv('GOOGLE_SEARCH_ENGINE_ID'),
+                "q": search_query,
+                "num": 5
+            }
+        )
+        return response.json().get('items', [])
+    except Exception as e:
+        print(f"Search error: {str(e)}")
+        return []
+
+def analyze_trends(data):
+    try:
+        yearly_loss = data['yearly_data']['tree_loss']
+        yearly_emissions = data['yearly_data']['emissions']
+        
+        # Calculate trends
+        recent_years = list(range(2019, 2024))
+        recent_loss = [yearly_loss.get(str(year), {}).get('value', 0) for year in recent_years]
+        recent_emissions = [yearly_emissions.get(str(year), {}).get('value', 0) for year in recent_years]
+        
+        avg_recent_loss = sum(x for x in recent_loss if x is not None) / len([x for x in recent_loss if x is not None])
+        avg_recent_emissions = sum(x for x in recent_emissions if x is not None) / len([x for x in recent_emissions if x is not None])
+        
+        return {
+            'recent_average_loss': avg_recent_loss,
+            'recent_average_emissions': avg_recent_emissions,
+            'trend': 'increasing' if recent_loss[-1] > recent_loss[0] else 'decreasing'
+        }
+    except Exception as e:
+        print(f"Trend analysis error: {str(e)}")
+        return {}
 
 def analyze_data(location=None, density_threshold=None, is_country=False):
     try:
@@ -186,7 +245,8 @@ def home():
             "state_data": "/data/state/<state_name>/<density>",
             "district_data": "/data/district/<district_name>/<density>",
             "india_data": "/data/india/<density>",
-            "densities": "/data/densities?location=<location>"
+            "densities": "/data/densities?location=<location>",
+            "analyze": "/data/analyze/<location>/<density>"
         }
     })
 
@@ -241,8 +301,254 @@ def get_available_densities():
     except Exception as e:
         print(f"Error in get_available_densities: {str(e)}")  # Debug log
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/data/analyze/<location>/<density>', methods=['GET'])
+def analyze_location_data(location, density):
+    try:
+        # Get forest data
+        forest_data = analyze_data(location, float(density))
+        if isinstance(forest_data, str) or 'error' in forest_data:
+            return jsonify({"error": "Could not retrieve forest data"}), 404
+
+        # Get news and current events
+        news_data = search_news(location)
+        
+        # Analyze trends
+        trends = analyze_trends(forest_data)
+        
+        # Prepare data for AI analysis
+        analysis_prompt = f'''
+        Analyze this forest data for {location}:
+        - Current forest cover: {forest_data['stats']['tree_cover_area']['formatted']}
+        - Carbon stocks: {forest_data['stats']['carbon_stocks']['formatted']}
+        - Recent trend: {trends['trend']}
+        - Net forest change: {forest_data['analysis']['net_forest_change']['formatted']}
+        
+        Please provide:
+        1. Simple explanation of the current forest situation
+        2. Historical context and changes
+        3. Future implications
+        4. Environmental impact
+        5. Recommendations for conservation
+        
+        Keep the language simple and conversational.
+        '''
+        
+        # Get AI analysis
+        ai_response = model.generate_content(analysis_prompt)
+        
+        # Combine all data
+        complete_analysis = {
+            'location': location,
+            'forest_data': forest_data,
+            'trends': trends,
+            'current_news': [{
+                'title': item.get('title', ''),
+                'snippet': item.get('snippet', ''),
+                'link': item.get('link', '')
+            } for item in news_data],
+            'ai_analysis': {
+                'summary': ai_response.text,
+                'timestamp': datetime.now().isoformat()
+            }
+        }
+        
+        return jsonify(complete_analysis)
+        
+    except Exception as e:
+        print(f"Analysis error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+def extract_location_from_data(data):
+    # Extract location from the forest data
+    if 'location' in data:
+        return data['location']
+    elif 'stats' in data and 'location' in data['stats']:
+        return data['stats']['location']
+    return None
+
+def analyze_forest_trends(data):
+    try:
+        yearly_data = data.get('yearly_data', {})
+        tree_loss = yearly_data.get('tree_loss', {})
+        emissions = yearly_data.get('emissions', {})
+        
+        # Calculate recent trends
+        recent_years = sorted(tree_loss.keys())[-5:]  # Last 5 years
+        recent_loss = [float(tree_loss[year]['value']) for year in recent_years if tree_loss[year]['value'] is not None]
+        recent_emissions = [float(emissions[year]['value']) for year in recent_years if emissions[year]['value'] is not None]
+        
+        return {
+            'average_annual_loss': sum(recent_loss) / len(recent_loss) if recent_loss else 0,
+            'average_annual_emissions': sum(recent_emissions) / len(recent_emissions) if recent_emissions else 0,
+            'trend': 'increasing' if recent_loss[-1] > recent_loss[0] else 'decreasing' if recent_loss else 'stable',
+            'years_analyzed': recent_years
+        }
+    except Exception as e:
+        print(f"Trend analysis error: {str(e)}")
+        return {}
+
+def get_sdg_context(forest_data, trends):
+    sdg_goals = {
+        'SDG 13': 'Climate Action',
+        'SDG 15': 'Life on Land',
+        'SDG 6': 'Clean Water and Sanitation'
+    }
+    
+    context = []
+    for sdg, description in sdg_goals.items():
+        if sdg == 'SDG 15':
+            context.append({
+                'goal': sdg,
+                'description': description,
+                'relevance': f"Forest coverage and biodiversity impact in {forest_data['location']}",
+                'metrics': {
+                    'forest_cover': forest_data['stats']['tree_cover_area']['formatted'],
+                    'trend': trends['trend']
+                }
+            })
+        elif sdg == 'SDG 13':
+            context.append({
+                'goal': sdg,
+                'description': description,
+                'relevance': 'Carbon emissions and climate impact',
+                'metrics': {
+                    'carbon_stocks': forest_data['stats']['carbon_stocks']['formatted'],
+                    'emissions_trend': trends['average_annual_emissions']
+                }
+            })
+    return context
+
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze_forest_data():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
+        location = data.get('location', 'the specified region')
+        
+        # Get recent news
+        news_data = search_news(location)
+        
+        # Create analysis prompt
+        analysis_prompt = f'''
+        Based on the forest data for {location}, provide a natural, conversational analysis in simple English. Include:
+
+        Current Situation:
+        - Forest cover: {data['stats']['tree_cover_area']['formatted']}
+        - Carbon stored: {data['stats']['carbon_stocks']['formatted']}
+        - Carbon density: {data['stats']['carbon_density']['formatted']}
+        
+        Recent Changes (2021-2023):
+        - 2021 tree loss: {data['yearly_data']['tree_loss']['2021']['formatted']}
+        - 2022 tree loss: {data['yearly_data']['tree_loss']['2022']['formatted']}
+        - 2023 tree loss: {data['yearly_data']['tree_loss']['2023']['formatted']}
+        
+        Overall change: {data['analysis']['net_forest_change']['formatted']}
+
+        Write a comprehensive yet simple analysis that a general audience can understand. Include:
+        1. The current state of forests
+        2. Recent changes and their significance
+        3. Environmental impacts
+        4. Future outlook
+        5. Conservation needs
+
+        Format the response as a continuous narrative, avoiding technical jargon. Don't use bullet points or numbered lists.
+        '''
+        
+        # Get AI analysis
+        ai_response = model.generate_content(analysis_prompt)
+        
+        # Get news in simple format
+        news_prompt = f'''
+        Based on these news items about {location}'s forests and environment:
+        {chr(10).join([f"- {news.get('title', '')}" for news in news_data[:3]])}
+
+        Provide a brief, simple summary of the recent news in 2-3 sentences, written in conversational English.
+        '''
+        
+        news_summary = model.generate_content(news_prompt)
+        
+        # Combine analysis and news in plain text
+        complete_text = f'''
+{ai_response.text}
+
+Recent News:
+{news_summary.text}
+'''
+        
+        return jsonify({
+            'analysis': complete_text
+        })
+        
+    except Exception as e:
+        print(f"Analysis error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat', methods=['POST', 'GET'])
+def chat_interaction():
+    try:
+        # First try to get message from query parameters
+        message = request.args.get('message', '')
+        
+        # If no message in query params, try request body
+        if not message:
+            if request.is_json:
+                message = request.json.get('message', '')
+            else:
+                message = request.get_data(as_text=True)
+        
+        # Clean up the message
+        message = message.strip('"').strip()
+        
+        if not message:
+            return "Please provide a question either as a query parameter or in the request body", 400
+
+        # Extract location from message
+        location = None
+        if "in" in message.lower():
+            parts = message.lower().split("in")
+            if len(parts) > 1:
+                location = parts[1].strip()
+
+        # Get relevant news if location is found
+        news_data = []
+        if location:
+            news_data = search_news(location)
+            
+        chat_prompt = f'''
+        As a sustainable development expert focusing on forest conservation:
+        
+        User Question: {message}
+        
+        {f"Location Context: {location}" if location else ""}
+        {f"Recent News Headlines: {chr(10).join([f'- {news.get('title', '')}' for news in news_data[:3]])}" if news_data else ""}
+        
+        Provide a helpful response that:
+        1. Addresses the question directly
+        2. Uses simple, clear language
+        3. Provides practical insights
+        4. Suggests actionable steps if relevant
+        5. Links to relevant SDGs
+        6. Incorporates any available news context
+        
+        Keep the response conversational and easy to understand.
+        '''
+        
+        response = model.generate_content(chat_prompt)
+        return response.text
+        
+    except Exception as e:
+        print(f"Chat error: {str(e)}")
+        return "Sorry, there was an error processing your question. Please try again.", 500
+
+
 
 if __name__ == "__main__":
+    if not os.getenv('GEMINI_API_KEY'):
+        print("WARNING: GEMINI_API_KEY not found in environment variables")
     print("Starting Flask server...")
     print("Available endpoints:")
     print("  - http://localhost:5000/")
@@ -251,4 +557,7 @@ if __name__ == "__main__":
     print("  - http://localhost:5000/data/district/<district_name>/<density>")
     print("  - http://localhost:5000/data/india/<density>")
     print("  - http://localhost:5000/data/densities?location=<location>")
+    print("  - http://localhost:5000/data/analyze/<location>/<density>")
+    print("  - http://localhost:5000/api/analyze")
+    print("  - http://localhost:5000/api/chat")
     app.run(debug=True, port=5000, host='0.0.0.0')
