@@ -1,37 +1,45 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import {
-  APIProvider,
-  Map,
-  useMap,
-  AdvancedMarker,
-  Pin
-} from '@vis.gl/react-google-maps';
-import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { Circle } from './Circle';
+import { GoogleMap, useLoadScript } from '@react-google-maps/api';
 
-// Default center on India
-const DEFAULT_CENTER = { lat: 20.5937, lng: 78.9629 };
-const DEFAULT_ZOOM = 5;
+const mapContainerStyle = {
+  width: '100%',
+  height: '400px'
+};
 
-const ForestMap = ({ forestLocations = [], onLocationSelect }) => {
+const center = {
+  lat: 10.8505,
+  lng: 76.2711
+};
+
+function ForestMap() {
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
+
+  if (loadError) {
+    console.error('Map load error:', loadError);
+    return <div>Error loading maps</div>;
+  }
+  
+  if (!isLoaded) return <div>Loading maps</div>;
+
   return (
-    <div className="w-full h-[500px] rounded-lg overflow-hidden shadow-lg">
-      <APIProvider apiKey={'AIzaSyDaBFN_EJz7KbRqt3wx7DUtYIbKgNJayhY'}>
-        <Map
-          defaultZoom={DEFAULT_ZOOM}
-          defaultCenter={DEFAULT_CENTER}
-          mapId='da37f3254c6a6d1c'
-          className="w-full h-full"
-        >
-          <ForestMarkers 
-            locations={forestLocations} 
-            onLocationSelect={onLocationSelect}
-          />
-        </Map>
-      </APIProvider>
+    <div style={{ width: '100%', height: '100vh' }}>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={7}
+        center={center}
+        options={{
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: true,
+          fullscreenControl: true,
+        }}
+      >
+      </GoogleMap>
     </div>
   );
-};
+}
 
 const ForestMarkers = ({ locations, onLocationSelect }) => {
   const map = useMap();
