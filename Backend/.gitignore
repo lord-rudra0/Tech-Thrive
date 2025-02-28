@@ -1,2 +1,13 @@
 .env
-node_module/
+node_modules/
+.env
+.env.local
+.env.development.local
+
+
+
+    #venv
+    venv/
+
+
+
