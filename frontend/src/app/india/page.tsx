@@ -1,11 +1,9 @@
-
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Line, 
-  Bar, 
-  Pie,
+  Bar,
   LineChart,
   BarChart, 
   XAxis, 
@@ -16,14 +14,9 @@ import FloatingChatbot from '../components/Chatbot';
 import Footer from '../components/footer';
 import { FloatingNavDemo } from '../components/navbar';
 
-
 interface FormattedValue {
   value: number;
   formatted: string;
-}
-
-interface YearlyData {
-  [year: string]: FormattedValue;
 }
 
 interface ForestData {
@@ -55,15 +48,20 @@ interface ForestData {
 
 const IndiaForestDashboard: React.FC = () => {
   const [forestData, setForestData] = useState<ForestData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDensity, setSelectedDensity] = useState<number>(30);
+  const [selectedDensity, setSelectedDensity] = useState<string>('select-density');
   
   // Available density thresholds
   const DENSITIES: number[] = [0, 10, 15, 20, 25, 30, 50, 75];
   
   // Fetch data from the API
   const fetchData = async (density: number): Promise<void> => {
+    if (!density && density !== 0) {
+      setError('Please select a density threshold');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
@@ -84,10 +82,14 @@ const IndiaForestDashboard: React.FC = () => {
     }
   };
   
-  // Fetch data initially and when density changes
-  useEffect(() => {
-    fetchData(selectedDensity);
-  }, [selectedDensity]);
+  // Handle filter button click
+  const handleFilter = () => {
+    if (!selectedDensity || selectedDensity === 'select-density') {
+      setError('Please select a density threshold');
+      return;
+    }
+    fetchData(Number(selectedDensity));
+  };
   
   // Prepare chart data for emissions
   const emissionsData = forestData?.yearly_data?.emissions 
@@ -107,20 +109,6 @@ const IndiaForestDashboard: React.FC = () => {
       }))
     : [];
     
-  // Prepare tree cover extent data for pie chart
-  const prepareExtentData = (): { name: string; value: number; formattedValue: string }[] => {
-    if (!forestData?.stats?.tree_cover_extent) return [];
-    
-    const years = Object.keys(forestData.stats.tree_cover_extent);
-    return years.map(year => ({
-      name: year,
-      value: forestData.stats.tree_cover_extent[year].value,
-      formattedValue: forestData.stats.tree_cover_extent[year].formatted
-    }));
-  };
-  
-  const treeExtentData = prepareExtentData();
-  
   // Get forest health status color
   const getHealthStatusColor = (status: string): string => {
     switch(status) {
@@ -147,22 +135,32 @@ const IndiaForestDashboard: React.FC = () => {
         India Forest Monitoring Dashboard
       </h1>
       
-      {/* Density Selector */}
+      {/* Density Selector and Filter Button */}
       <div className="mb-8 max-w-md mx-auto">
         <label className="block text-sm font-medium text-gray-300 mb-2">
           Tree Cover Density Threshold (%)
         </label>
-        <select
-          value={selectedDensity}
-          onChange={(e) => setSelectedDensity(Number(e.target.value))}
-          className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white focus:ring-purple-700 focus:border-purple-500"
-        >
-          {DENSITIES.map((density) => (
-            <option key={density} value={density}>
-              {density}%
-            </option>
-          ))}
-        </select>
+        <div className="space-y-4">
+          <select
+            value={selectedDensity}
+            onChange={(e) => setSelectedDensity(e.target.value)}
+            className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white focus:ring-purple-700 focus:border-purple-500"
+          >
+            <option value="select-density" disabled>Select Density</option>
+            {DENSITIES.map((density) => (
+              <option key={density} value={density}>
+                {density}%
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleFilter}
+            disabled={loading || selectedDensity === 'select-density'}
+            className="w-full p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Loading...' : 'Apply Filter'}
+          </button>
+        </div>
       </div>
       
       {/* Error Message */}
@@ -184,6 +182,15 @@ const IndiaForestDashboard: React.FC = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
           <span className="ml-3 text-lg text-purple-300">Loading data...</span>
+        </div>
+      )}
+      
+      {/* Initial State - No Data */}
+      {!loading && !forestData && !error && (
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <p className="text-lg text-gray-400">Select a density threshold and click 'Apply Filter' to view forest data</p>
+          </div>
         </div>
       )}
       

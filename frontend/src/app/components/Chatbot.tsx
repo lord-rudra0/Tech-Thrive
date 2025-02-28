@@ -31,6 +31,7 @@ interface ChatbotProps {
   forestData?: ForestData;
   location?: string;
   initialAnalysis?: string;
+  defaultIsOpen?: boolean;
 }
 
 interface Message {
@@ -39,8 +40,8 @@ interface Message {
   sender: "user" | "bot";
 }
 
-const FloatingChatbot: React.FC<ChatbotProps> = ({ forestData, location, initialAnalysis }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const FloatingChatbot: React.FC<ChatbotProps> = ({ forestData, location, initialAnalysis, defaultIsOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(defaultIsOpen);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +49,7 @@ const FloatingChatbot: React.FC<ChatbotProps> = ({ forestData, location, initial
   // Set initial messages when analysis is received
   useEffect(() => {
     if (initialAnalysis && forestData) {
+      setIsOpen(true); // Also open the chat when analysis is received
       setMessages([
         {
           id: 1,

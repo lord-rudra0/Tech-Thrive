@@ -15,6 +15,7 @@ import {
   Legend 
 } from 'chart.js';
 import { MapPin, AlertCircle, Search, X } from 'lucide-react';
+import FloatingChatbot from './Chatbot';
 
 // Register ChartJS components
 ChartJS.register(
@@ -110,8 +111,8 @@ interface ForestStats {
 }
 
 interface ForestAnalysis {
-  forest_health_status: string;
-  net_forest_change: FormattedValue;
+  forest_health_status: 'Decline' | 'Stable' | 'Improvement';
+  net_forest_change: FormattedValue & { percent: number };
   total_emissions: FormattedValue;
   total_loss: FormattedValue;
 }
@@ -137,6 +138,8 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [initialAnalysis, setInitialAnalysis] = useState<string | undefined>(undefined);
+  const [showChat, setShowChat] = useState<boolean>(false);
 
   // Check if a location was passed via URL params
   useEffect(() => {
@@ -213,13 +216,13 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
     
     setLoading(true);
     setError(null);
+    setShowChat(false);
     
     try {
       const endpoint = locationType === 'state' 
         ? `https://tech-thrive.onrender.com/data/state/${selectedLocation}/${selectedDensity}`
         : `https://tech-thrive.onrender.com/data/district/${selectedLocation}/${selectedDensity}`;
         
-      
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch data');
@@ -227,6 +230,41 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
       
       const data = await response.json();
       setForestData(data);
+
+      // Get AI analysis of the forest data
+      try {
+        const analysisResponse = await fetch('http://localhost:5000/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            location: selectedLocation,
+            location_type: locationType,
+            density_threshold: selectedDensity,
+            stats: data.stats,
+            yearly_data: data.yearly_data,
+            analysis: data.analysis
+          })
+        });
+        
+        if (analysisResponse.ok) {
+          const analysisData = await analysisResponse.json();
+          if (analysisData && analysisData.analysis) {
+            setInitialAnalysis(analysisData.analysis);
+            setShowChat(true);
+          } else {
+            console.error('Invalid analysis response format');
+          }
+        } else {
+          const errorText = await analysisResponse.text();
+          console.error('Analysis response not ok:', errorText);
+          setError('Failed to analyze forest data. Please try again.');
+        }
+      } catch (analysisError) {
+        console.error('Error getting initial analysis:', analysisError);
+        setError('Failed to analyze forest data. Please try again.');
+      }
     } catch (err) {
       console.error('Error fetching forest data:', err);
       setError('Failed to load forest data. Please try again.');
@@ -235,18 +273,23 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
     }
   };
 
-  useEffect(() => {
-    if (selectedLocation && selectedDensity) {
-      fetchData();
-    }
-  }, [selectedLocation, selectedDensity, locationType]);
-
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
+    if (!selectedLocation) {
+      setError('Please select a location');
+      return;
+    }
+    if (!selectedDensity) {
+      setError('Please select a density threshold');
+      return;
+    }
+    const filtered = getFilteredLocations();
+    if (filtered.length === 0) {
+      setError('No matching locations found');
+      return;
+    }
     fetchData();
   };
-
-  const filteredLocations = getFilteredLocations();
 
   // Prepare chart data for emissions
   const emissionsChartData = forestData?.yearly_data?.emissions ? {
@@ -577,8 +620,17 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
           </div>
         </div>
       )}
+      
+      {/* Add Chatbot */}
+      {showChat && (
+        <FloatingChatbot
+          forestData={forestData || undefined}
+          location={selectedLocation}
+          initialAnalysis={initialAnalysis}
+          defaultIsOpen={true}
+        />
+      )}
     </div>
-    
   );
 };
 
