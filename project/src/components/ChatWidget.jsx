@@ -1,12 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Send } from 'lucide-react';
 
-const ChatWidget = ({ onClose }) => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm ForestWatch Assistant. How can I help you with forest monitoring today?", isUser: false }
-  ]);
+const ChatWidget = ({ onClose, initialAnalysis, forestData, location }) => {
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Set initial messages when analysis is received
+  useEffect(() => {
+    if (initialAnalysis) {
+      setMessages([
+        {
+          id: 1,
+          text: "Hello! I'm ForestWatch Assistant. I've analyzed the forest data for your selected location.",
+          isUser: false
+        },
+        {
+          id: 2,
+          text: initialAnalysis,
+          isUser: false
+        },
+        {
+          id: 3,
+          text: "You can ask me any questions about this data or forest conservation in general. How can I help you?",
+          isUser: false
+        }
+      ]);
+    }
+  }, [initialAnalysis]);
 
   const sendMessageToBackend = async (message) => {
     try {
@@ -15,7 +36,17 @@ const ChatWidget = ({ onClose }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          message,
+          context: {
+            location,
+            forestData: {
+              stats: forestData.stats,
+              yearly_data: forestData.yearly_data,
+              analysis: forestData.analysis
+            }
+          }
+        }),
       });
 
       if (!response.ok) {
@@ -79,7 +110,7 @@ const ChatWidget = ({ onClose }) => {
             className={`mb-3 ${message.isUser ? 'text-right' : 'text-left'}`}
           >
             <div 
-              className={`inline-block px-3 py-2 rounded-lg max-w-[80%] ${
+              className={`inline-block px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap ${
                 message.isUser 
                   ? 'bg-green-600 text-white rounded-br-none' 
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
@@ -91,7 +122,7 @@ const ChatWidget = ({ onClose }) => {
         ))}
         {isLoading && (
           <div className="text-center text-gray-500">
-            <div className="animate-pulse">Thinking...</div>
+            <div className="animate-pulse">Analyzing...</div>
           </div>
         )}
       </div>
@@ -101,7 +132,7 @@ const ChatWidget = ({ onClose }) => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Ask me about the forest data..."
           className="flex-grow px-3 py-2 border rounded-l-lg focus:outline-none focus:ring-1 focus:ring-green-500"
           disabled={isLoading}
         />

@@ -13,6 +13,7 @@ import {
   Legend 
 } from 'chart.js';
 import { MapPin, AlertCircle, Search, X } from 'lucide-react';
+import ChatWidget from '../components/ChatWidget';
 
 // Register ChartJS components
 ChartJS.register(
@@ -72,7 +73,7 @@ const Dashboard = ({ locations, densities }) => {
   const routeLocation = useLocation();
   const [locationType, setLocationType] = useState('state');
   const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedDensity, setSelectedDensity] = useState(30);
+  const [selectedDensity, setSelectedDensity] = useState('');
   const [forestData, setForestData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -80,23 +81,17 @@ const Dashboard = ({ locations, densities }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [showChat, setShowChat] = useState(false);
+  const [initialAnalysis, setInitialAnalysis] = useState(null);
 
-  // Check if a location was passed from the home page
+  // Remove automatic density selection
   useEffect(() => {
     if (routeLocation.state?.selectedLocation) {
       setSelectedLocation(routeLocation.state.selectedLocation);
-    } else if (locations && locations.length > 0 && !selectedLocation) {
-      setSelectedLocation(locations[0]);
     }
-  }, [locations, routeLocation.state]);
+  }, [routeLocation.state]);
 
-  useEffect(() => {
-    if (densities && densities.length > 0 && !selectedDensity) {
-      setSelectedDensity(densities[0]);
-    }
-  }, [densities]);
-
-  // Fetch districts when locationType changes to 'district'
+  // Remove automatic data fetching on selection change
   useEffect(() => {
     if (locationType === 'district') {
       fetchDistricts();
@@ -167,6 +162,26 @@ const Dashboard = ({ locations, densities }) => {
       
       const data = await response.json();
       setForestData(data);
+
+      // Get AI analysis for the chat
+      const analysisResponse = await fetch('http://localhost:5000/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location: selectedLocation,
+          stats: data.stats,
+          yearly_data: data.yearly_data,
+          analysis: data.analysis
+        }),
+      });
+
+      if (analysisResponse.ok) {
+        const analysisData = await analysisResponse.json();
+        setInitialAnalysis(analysisData.analysis);
+        setShowChat(true);
+      }
     } catch (err) {
       console.error('Error fetching forest data:', err);
       setError('Failed to load forest data. Please try again.');
@@ -175,14 +190,19 @@ const Dashboard = ({ locations, densities }) => {
     }
   };
 
-  useEffect(() => {
-    if (selectedLocation && selectedDensity) {
-      fetchData();
-    }
-  }, [selectedLocation, selectedDensity, locationType]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    if (!selectedLocation) {
+      setError('Please select a location');
+      return;
+    }
+    
+    if (!selectedDensity) {
+      setError('Please select a density threshold');
+      return;
+    }
+    
     fetchData();
   };
 
@@ -231,6 +251,7 @@ const Dashboard = ({ locations, densities }) => {
                 setLocationType(e.target.value);
                 setSelectedLocation('');
                 setSearchTerm('');
+                setForestData(null); // Clear existing data
               }}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
             >
@@ -239,77 +260,61 @@ const Dashboard = ({ locations, densities }) => {
             </select>
           </div>
 
-          {/* Searchable Location Dropdown */}
+          {/* Location Selector */}
           <div ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {locationType === 'state' ? 'State' : 'District'}
             </label>
             <div className="relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setIsDropdownOpen(true);
-                    if (e.target.value !== selectedLocation) {
-                      setSelectedLocation('');
-                    }
-                  }}
-                  onFocus={() => setIsDropdownOpen(true)}
-                  placeholder={`Search ${locationType}...`}
-                  className="w-full p-2 pr-20 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                  {searchTerm && (
-                    <button
-                      type="button"
-                      onClick={clearSelection}
-                      className="p-1 text-gray-400 hover:text-gray-500"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                  <Search size={16} className="text-gray-400 ml-1" />
-                </div>
-              </div>
-
-              {/* Dropdown List */}
-              {isDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {getFilteredLocations().length > 0 ? (
-                    getFilteredLocations().map((location) => (
-                      <button
-                        key={location}
-                        type="button"
-                        onClick={() => handleLocationSelect(location)}
-                        className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                          selectedLocation === location ? 'bg-gray-100' : ''
-                        }`}
-                      >
-                        {location.charAt(0).toUpperCase() + location.slice(1)}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-2 text-gray-500">
-                      No {locationType}s found
-                    </div>
-                  )}
-                </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setIsDropdownOpen(true);
+                }}
+                onClick={() => setIsDropdownOpen(true)}
+                placeholder={`Search ${locationType}...`}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 pr-10"
+              />
+              {selectedLocation && (
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
               )}
             </div>
+            {/* Location Dropdown */}
+            {isDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                {getFilteredLocations().map((location) => (
+                  <button
+                    key={location}
+                    type="button"
+                    onClick={() => handleLocationSelect(location)}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100"
+                  >
+                    {location}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Density Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Density Threshold (%)
+              Density Threshold
             </label>
             <select
               value={selectedDensity}
-              onChange={(e) => setSelectedDensity(Number(e.target.value))}
+              onChange={(e) => setSelectedDensity(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
             >
+              <option value="">Select Density</option>
               {DENSITIES.map((density) => (
                 <option key={density} value={density}>
                   {density}%
@@ -319,30 +324,28 @@ const Dashboard = ({ locations, densities }) => {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md flex items-center">
+            <AlertCircle size={18} className="mr-2" />
+            {error}
+          </div>
+        )}
+
+        {/* Submit Button */}
         <div className="mt-4">
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-            disabled={loading || !selectedLocation}
+            disabled={loading}
+            className={`w-full md:w-auto px-6 py-2 rounded-md text-white font-medium
+              ${loading 
+                ? 'bg-green-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700'}`}
           >
             {loading ? 'Loading...' : 'Apply Filters'}
           </button>
         </div>
       </form>
-      
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Loading State */}
       {loading && (
@@ -497,6 +500,16 @@ const Dashboard = ({ locations, densities }) => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Add ChatWidget */}
+      {showChat && (
+        <ChatWidget 
+          onClose={() => setShowChat(false)}
+          initialAnalysis={initialAnalysis}
+          forestData={forestData}
+          location={selectedLocation}
+        />
       )}
     </div>
   );
