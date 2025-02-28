@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -67,10 +68,10 @@ const IndiaForestDashboard: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(https://tech-thrive.onrender.com/data/india/${density});
+      const response = await fetch(`https://tech-thrive.onrender.com/data/india/${density}`);
       
       if (!response.ok) {
-        throw new Error(Failed to fetch data: ${response.status});
+        throw new Error(`Failed to fetch data: ${response.status}`);
       }
       
       const data = await response.json();
@@ -203,7 +204,7 @@ const IndiaForestDashboard: React.FC = () => {
                 {getHealthIcon(forestData.analysis.forest_health_status)}
                 <div className="ml-2">
                   <p className="text-sm text-gray-400">Forest Health Status</p>
-                  <p className={text-xl font-bold ${getHealthStatusColor(forestData.analysis.forest_health_status)}}>
+                  <p className={`text-xl font-bold ${getHealthStatusColor(forestData.analysis.forest_health_status)}`}>
                     {forestData.analysis.forest_health_status}
                   </p>
                 </div>
@@ -239,12 +240,12 @@ const IndiaForestDashboard: React.FC = () => {
             
             <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-gray-700">
               <h3 className="text-lg font-semibold text-gray-300 mb-2">Net Forest Change</h3>
-              <p className={text-2xl font-bold ${forestData.analysis.net_forest_change.value < 0 ? 'text-red-400' : 'text-green-400'}}>
+              <p className={`text-2xl font-bold ${forestData.analysis.net_forest_change.value < 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {forestData.analysis.net_forest_change.formatted}
               </p>
               <p className="text-sm text-gray-400 mt-2">
                 {forestData.analysis.net_forest_change.percent 
-                  ? ${forestData.analysis.net_forest_change.percent}% 
+                  ? `${forestData.analysis.net_forest_change.percent}%` 
                   : 'Percentage not available'}
               </p>
             </div>

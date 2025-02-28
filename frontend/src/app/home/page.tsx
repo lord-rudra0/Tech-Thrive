@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import { FloatingNavDemo } from "../components/navbar";
 import { BackgroundBoxes } from "../components/Backgroundbox";
