@@ -2,6 +2,7 @@ import React from 'react'
 import GoogleMaps3D from '../components/Google3d'
 import Footer from '../components/footer'
 import { FloatingNavDemo } from '../components/navbar'
+import FloatingChatbot from '../components/Chatbot'
 
 
 const page = () => {
@@ -18,7 +19,10 @@ const page = () => {
     <footer>
     <Footer/>
     </footer>
-    
+    <FloatingNavDemo/>
+    <div>
+    <FloatingChatbot/>
+    </div>
     
     </>
   )
