@@ -53,7 +53,7 @@ cd forestwatch
 ```bash
 cd frontend
 npm install
-```
+``
 
 3. Backend Setup:
 ```bash
