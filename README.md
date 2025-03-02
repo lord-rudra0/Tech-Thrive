@@ -1,5 +1,6 @@
 # ForestWatch - Intelligent Forest Monitoring Platform
 
+
 An advanced web application for monitoring forest health, analyzing carbon emissions, and tracking tree cover changes across India. Powered by AI-driven insights and real-time data analysis.
 
 ## 🌟 Key Features
