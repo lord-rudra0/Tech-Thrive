@@ -523,9 +523,8 @@ def chat_interaction():
         As a sustainable development expert focusing on forest conservation:
         
         User Question: {message}
-        
         {f"Location Context: {location}" if location else ""}
-        {f"Recent News Headlines: {chr(10).join([f'- {news.get('title', '')}" for news in news_data[:3]])}" if news_data else ""}
+        {f"Recent News Headlines: {chr(10).join([f'- {news.get("title", "")}' for news in news_data[:3]])}" if news_data else ""}
         
         Provide a helpful response that:
         1. Addresses the question directly
