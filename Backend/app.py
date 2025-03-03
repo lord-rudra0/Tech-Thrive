@@ -3,7 +3,6 @@ from flask_cors import CORS
 import google.generativeai as genai
 import os
 from datetime import datetime
-import requests
 from dotenv import load_dotenv
 
 # Load environment variables
