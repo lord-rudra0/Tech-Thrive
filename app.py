@@ -344,9 +344,9 @@ def analyze_location_data(location, density):
             'forest_data': forest_data,
             'trends': trends,
             'current_news': [{
-                'title': item.get('title', ''),
-                'snippet': item.get('snippet', ''),
-                'link': item.get('link', '')
+                'title': item.get("title", ""),
+                'snippet': item.get("snippet", ""),
+                'link': item.get("link", ""),
             } for item in news_data],
             'ai_analysis': {
                 'summary': ai_response.text,
@@ -465,7 +465,7 @@ def analyze_forest_data():
         # Get news in simple format
         news_prompt = f'''
         Based on these news items about {location}'s forests and environment:
-        {chr(10).join([f"- {news.get('title', '')}" for news in news_data[:3]])}
+        {chr(10).join([f"- {news.get("title", '')}" for news in news_data[:3]])}
 
         Provide a brief, simple summary of the recent news in 2-3 sentences, written in conversational English.
         '''
@@ -525,7 +525,7 @@ def chat_interaction():
         User Question: {message}
         
         {f"Location Context: {location}" if location else ""}
-        {f"Recent News Headlines: {chr(10).join([f'- {news.get('title', '')}' for news in news_data[:3]])}" if news_data else ""}
+        {f"Recent News Headlines: {chr(10).join([f'- {news.get("title", '')}' for news in news_data[:3]])}" if news_data else ""}
         
         Provide a helpful response that:
         1. Addresses the question directly
