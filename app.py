@@ -311,9 +311,6 @@ def analyze_location_data(location, density):
         if isinstance(forest_data, str) or 'error' in forest_data:
             return jsonify({"error": "Could not retrieve forest data"}), 404
 
-        # Get news and current events
-        news_data = search_news(location)
-        
         # Analyze trends
         trends = analyze_trends(forest_data)
         
@@ -343,11 +340,6 @@ def analyze_location_data(location, density):
             'location': location,
             'forest_data': forest_data,
             'trends': trends,
-            'current_news': [{
-                'title': item.get("title", ""),
-                'snippet': item.get("snippet", ""),
-                'link': item.get("link", ""),
-            } for item in news_data],
             'ai_analysis': {
                 'summary': ai_response.text,
                 'timestamp': datetime.now().isoformat()
@@ -430,9 +422,6 @@ def analyze_forest_data():
             
         location = data.get('location', 'the specified region')
         
-        # Get recent news
-        news_data = search_news(location)
-        
         # Create analysis prompt
         analysis_prompt = f'''
         Based on the forest data for {location}, provide a natural, conversational analysis in simple English. Include:
@@ -462,26 +451,8 @@ def analyze_forest_data():
         # Get AI analysis
         ai_response = model.generate_content(analysis_prompt)
         
-        # Get news in simple format
-        news_prompt = f'''
-        Based on these news items about {location}'s forests and environment:
-        {chr(10).join([f"- {news.get('title', '')}" for news in news_data[:3]])}
-
-        Provide a brief, simple summary of the recent news in 2-3 sentences, written in conversational English.
-        '''
-        
-        news_summary = model.generate_content(news_prompt)
-        
-        # Combine analysis and news in plain text
-        complete_text = f'''
-{ai_response.text}
-
-Recent News:
-{news_summary.text}
-'''
-        
         return jsonify({
-            'analysis': complete_text
+            'analysis': ai_response.text
         })
         
     except Exception as e:
@@ -514,17 +485,11 @@ def chat_interaction():
             if len(parts) > 1:
                 location = parts[1].strip()
 
-        # Get relevant news if location is found
-        news_data = []
-        if location:
-            news_data = search_news(location)
-            
         chat_prompt = f'''
         As a sustainable development expert focusing on forest conservation:
         
         User Question: {message}
         {f"Location Context: {location}" if location else ""}
-        {f"Recent News Headlines: {chr(10).join([f'- {news.get('title', '')}' for news in news_data[:3]])}" if news_data else ""}
         
         Provide a helpful response that:
         1. Addresses the question directly
@@ -532,7 +497,6 @@ def chat_interaction():
         3. Provides practical insights
         4. Suggests actionable steps if relevant
         5. Links to relevant SDGs
-        6. Incorporates any available news context
         
         Keep the response conversational and easy to understand.
         '''
