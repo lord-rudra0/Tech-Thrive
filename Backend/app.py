@@ -1,5 +1,5 @@
         # Create the prompt with context
-        prompt = f'''
+        chat_prompt = f'''
 As a sustainable development expert focusing on forest conservation:
 
 User Question: {message}
@@ -13,7 +13,7 @@ Provide a helpful response that:
 3. Provides practical insights
 '''
         
-        ai_response = model.generate_content(prompt)
+        ai_response = model.generate_content(chat_prompt)
         
         # Get news in simple format
         news_prompt = f'''
