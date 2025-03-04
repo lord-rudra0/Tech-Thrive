@@ -80,7 +80,7 @@ const FloatingChatbot: React.FC<ChatbotProps> = ({ forestData, location, initial
 
   const sendMessageToBackend = async (message: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/chat', {
+      const response = await fetch('https://tech-thrive.onrender.com/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ const FloatingChatbot: React.FC<ChatbotProps> = ({ forestData, location, initial
     setMessages([...messages, analysisRequestMsg]);
     
     try {
-      const response = await fetch('http://localhost:5000/api/analyze', {
+      const response = await fetch('https://tech-thrive.onrender.com/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

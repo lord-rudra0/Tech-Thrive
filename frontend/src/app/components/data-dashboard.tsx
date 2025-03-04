@@ -233,7 +233,7 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
 
       // Get AI analysis of the forest data
       try {
-        const analysisResponse = await fetch('http://localhost:5000/api/analyze', {
+        const analysisResponse = await fetch('https://tech-thrive.onrender.com/api/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
