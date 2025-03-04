@@ -3,6 +3,13 @@ import React, { JSX } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useMotionValueEvent } from "framer-motion";
+
+interface ScrollEvent {
+  y: number;
+  velocity: number;
+  direction: number;
+}
 
 export const FloatingNav = ({
   navItems,
@@ -16,6 +23,20 @@ export const FloatingNav = ({
   className?: string;
 }) => {
   // No longer need scroll-related states or logic
+  const scrollY = motion.useMotionValue(0);
+  const setHidden = (hidden: boolean) => {
+    // Implement the logic to hide or show the navbar based on the hidden parameter
+  };
+
+  useMotionValueEvent(scrollY, "change", (latest: number) => {
+    const previous = scrollY.getPrevious();
+    if (latest > previous && latest > 150) {
+      setHidden(true);
+    } else {
+      setHidden(false);
+    }
+  });
+
   return (
     <AnimatePresence mode="wait">
       <motion.div

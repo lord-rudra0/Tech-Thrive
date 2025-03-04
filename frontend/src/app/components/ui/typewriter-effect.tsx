@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { motion, stagger, useAnimate, useInView } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useCallback, useState } from "react";
 
 export const TypewriterEffect = ({
   words,
@@ -16,6 +16,40 @@ export const TypewriterEffect = ({
   className?: string;
   cursorClassName?: string;
 }) => {
+  const [text, setText] = useState("");
+
+  const animate = useCallback(() => {
+    let currentIndex = 0;
+    let currentText = '';
+    let isDeleting = false;
+
+    const animateText = () => {
+      if (isDeleting) {
+        currentText = words[currentIndex].text.substring(0, currentText.length - 1);
+        if (currentText === '') {
+          isDeleting = false;
+          currentIndex = (currentIndex + 1) % words.length;
+        }
+      } else {
+        currentText = words[currentIndex].text.substring(0, currentText.length + 1);
+        if (currentText === words[currentIndex].text) {
+          isDeleting = true;
+          setTimeout(() => {
+            isDeleting = true;
+          }, 2000);
+        }
+      }
+      setText(currentText);
+      setTimeout(animateText, isDeleting ? 50 : 100);
+    };
+
+    animateText();
+  }, [words]);
+
+  useEffect(() => {
+    animate();
+  }, [animate]);
+
   // split text inside of words into array of characters
   const wordsArray = words.map((word) => {
     return {
@@ -185,31 +219,3 @@ export const TypewriterEffectSmooth = ({
     </div>
   );
 };
-
-useEffect(() => {
-  let currentIndex = 0;
-  let currentText = '';
-  let isDeleting = false;
-
-  const animate = () => {
-    if (isDeleting) {
-      currentText = words[currentIndex].text.substring(0, currentText.length - 1);
-      if (currentText === '') {
-        isDeleting = false;
-        currentIndex = (currentIndex + 1) % words.length;
-      }
-    } else {
-      currentText = words[currentIndex].text.substring(0, currentText.length + 1);
-      if (currentText === words[currentIndex].text) {
-        isDeleting = true;
-        setTimeout(() => {
-          isDeleting = true;
-        }, 2000);
-      }
-    }
-    setText(currentText);
-    setTimeout(animate, isDeleting ? 50 : 100);
-  };
-
-  animate();
-}, [words, animate]);
