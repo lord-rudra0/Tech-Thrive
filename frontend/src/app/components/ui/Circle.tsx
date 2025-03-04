@@ -98,6 +98,30 @@ const useCircle = (props: CircleProps) => {
     };
   }, [circle]);
 
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const { left, top, width, height } = circle.current.getBoundingClientRect();
+      const x = clientX - left - width / 2;
+      const y = clientY - top - height / 2;
+      const angle = Math.atan2(y, x) * (180 / Math.PI);
+      const rotation = angle + 90;
+      circle.current.style.transform = `rotate(${rotation}deg)`;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [circle]);
+
+  useEffect(() => {
+    const handleMouseLeave = () => {
+      circle.current.style.transform = "rotate(0deg)";
+    };
+
+    window.addEventListener("mouseleave", handleMouseLeave);
+    return () => window.removeEventListener("mouseleave", handleMouseLeave);
+  }, [circle]);
+
   return circle;
 };
 

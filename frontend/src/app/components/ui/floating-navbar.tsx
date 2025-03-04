@@ -3,78 +3,68 @@ import React, { JSX } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useMotionValueEvent } from "framer-motion";
 
-interface ScrollEvent {
-  y: number;
-  velocity: number;
-  direction: number;
+interface NavItem {
+  name: string;
+  link: string;
+  icon?: React.ReactNode;
 }
 
-export const FloatingNav = ({
+interface FloatingNavProps {
+  navItems: NavItem[];
+  className?: string;
+}
+
+export const FloatingNav: React.FC<FloatingNavProps> = ({
   navItems,
   className,
-}: {
-  navItems: {
-    name: string;
-    link: string;
-    icon?: JSX.Element;
-  }[];
-  className?: string;
 }) => {
-  // No longer need scroll-related states or logic
-  const scrollY = motion.useMotionValue(0);
-  const setHidden = (hidden: boolean) => {
-    // Implement the logic to hide or show the navbar based on the hidden parameter
-  };
+  const [isVisible, setIsVisible] = React.useState(true);
 
-  useMotionValueEvent(scrollY, "change", (latest: number) => {
-    const previous = scrollY.getPrevious();
-    if (latest > previous && latest > 150) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
-  });
+  React.useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      const direction = scrollY > lastScrollY ? "down" : "up";
+      setIsVisible(direction === "up");
+      lastScrollY = scrollY > 0 ? scrollY : 0;
+    };
+
+    window.addEventListener("scroll", updateScrollDirection);
+    return () => window.removeEventListener("scroll", updateScrollDirection);
+  }, []);
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: -10,
-        }}
-        animate={{
-          y: 0,
-          opacity: 1,
-        }}
-        transition={{
-          duration: 0.2,
-        }}
-        className={cn(
-          "flex max-w-fit fixed top-10 inset-x-0 mx-auto border border-transparent dark:border-white/[0.2] rounded-full dark:bg-black bg-white shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] z-[5000] pr-2 pl-8 py-2 items-center justify-center space-x-4",
-          className
-        )}
-      >
-        {navItems.map((navItem: any, idx: number) => (
-          <Link
-            key={`link=${idx}`}
-            href={navItem.link}
-            className={cn(
-              "relative dark:text-neutral-50 items-center flex space-x-1 text-neutral-600 dark:hover:text-neutral-300 hover:text-neutral-500"
-            )}
-          >
-            <span className="block sm:hidden">{navItem.icon}</span>
-            <span className="hidden sm:block text-sm">{navItem.name}</span>
-          </Link>
-        ))}
-        <Link href={`/india`}>
-        <button className="border text-sm font-medium relative border-neutral-200 dark:border-white/[0.2] text-black dark:text-white px-4 py-2 rounded-full">
-          <span> India</span>
-          <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-blue-500 to-transparent h-px" />
-        </button></Link>
-        
-      </motion.div>
+      {isVisible && (
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          className={cn(
+            "fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800",
+            className
+          )}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-8">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.link}
+                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    {item.icon && <span className="mr-2">{item.icon}</span>}
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 };
