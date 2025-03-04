@@ -126,6 +126,16 @@ interface ForestData {
   yearly_data: YearlyDataCategory;
 }
 
+interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    borderColor?: string;
+    backgroundColor?: string;
+  }[];
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
   const searchParams = useSearchParams();
   const [locationType, setLocationType] = useState<string>('state');
@@ -292,7 +302,7 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
   };
 
   // Prepare chart data for emissions
-  const emissionsChartData = forestData?.yearly_data?.emissions ? {
+  const emissionsChartData: ChartData | null = forestData?.yearly_data?.emissions ? {
     labels: Object.keys(forestData.yearly_data.emissions),
     datasets: [
       {
@@ -305,7 +315,7 @@ const Dashboard: React.FC<DashboardProps> = ({ locations, densities }) => {
   } : null;
 
   // Prepare chart data for tree loss
-  const treeLossChartData = forestData?.yearly_data?.tree_loss ? {
+  const treeLossChartData: ChartData | null = forestData?.yearly_data?.tree_loss ? {
     labels: Object.keys(forestData.yearly_data.tree_loss),
     datasets: [
       {

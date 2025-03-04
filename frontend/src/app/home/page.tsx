@@ -1,50 +1,20 @@
-
-import Image from "next/image";
-import { FloatingNavDemo } from "../components/navbar";
-import { BackgroundBoxes } from "../components/Backgroundbox";
-import { TimelineCarbon } from "../components/catlog";
-import Footer from "../components/footer";
-import FloatingChatbot from "../components/Chatbot";
-
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Home() {
-  const words=[{
-    text:'Carbon',
-  },{
-    text:" Emissions ",
-  },{
-    text:" and ",
-  },{
-    text:" Tree ",
-  },{
-    text:" cover ",
-  },{
-    text:" loss ",
-  }]
-  const content= ['emission','treeloss']
   return (
-    <>
-    <FloatingNavDemo/>
-      <main className="flex justify-center items-center ">
-      <div className="flex flex-col items-center justify-center h-[40rem] ">
-     <BackgroundBoxes/>
-     
-      <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 space-x-0 md:space-x-4 mt-10">
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
+        <h1 className="text-4xl font-bold mb-8 text-center">Welcome to Forest Analytics</h1>
+        <div className="flex justify-center gap-4">
+          <Link href="/india">
+            <Button>View India&apos;s Forests</Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="outline">Go to Dashboard</Button>
+          </Link>
+        </div>
       </div>
-      
-    </div>
-      </main>
-      <div>
-      <TimelineCarbon/>
-      </div>
-     
-     
-      <footer>
-    <Footer/>
-    </footer>
-    <div>
-    <FloatingChatbot/>
-    </div>
-    </>
+    </main>
   );
 }
