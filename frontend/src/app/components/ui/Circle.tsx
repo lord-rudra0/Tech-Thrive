@@ -10,6 +10,8 @@ interface CircleProps extends google.maps.CircleOptions {
   onMouseOut?: (event: google.maps.MapMouseEvent) => void;
   onRadiusChanged?: (radius: number) => void;
   onCenterChanged?: (center: google.maps.LatLng | null) => void;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 const useCircle = (props: CircleProps) => {
@@ -99,14 +101,17 @@ const useCircle = (props: CircleProps) => {
   }, [circle]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent): void => {
+      if (!circle) return;
       const { clientX, clientY } = e;
-      const { left, top, width, height } = circle.current.getBoundingClientRect();
+      const { left, top, width, height } = circle.getArray()[0].getPath().getArray()[Math.floor(circle.getPathLength() / 2)];
       const x = clientX - left - width / 2;
       const y = clientY - top - height / 2;
       const angle = Math.atan2(y, x) * (180 / Math.PI);
       const rotation = angle + 90;
-      circle.current.style.transform = `rotate(${rotation}deg)`;
+      circle.getPath().forEach(function(point: google.maps.LatLng) {
+        point.set(point.lat() + (x / width) * 0.001, point.lng() + (y / width) * 0.001);
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -114,8 +119,11 @@ const useCircle = (props: CircleProps) => {
   }, [circle]);
 
   useEffect(() => {
-    const handleMouseLeave = () => {
-      circle.current.style.transform = "rotate(0deg)";
+    const handleMouseLeave = (): void => {
+      if (!circle) return;
+      circle.getPath().forEach(function(point: google.maps.LatLng) {
+        point.set(point.lat() - (x / width) * 0.001, point.lng() - (y / width) * 0.001);
+      });
     };
 
     window.addEventListener("mouseleave", handleMouseLeave);
@@ -125,10 +133,45 @@ const useCircle = (props: CircleProps) => {
   return circle;
 };
 
-const Circle = forwardRef<google.maps.Circle, CircleProps>((props, ref) => {
-  const circle = useCircle(props);
-  useImperativeHandle(ref, () => circle);
-  return null;
-});
+const Circle: React.FC<CircleProps> = ({ className, children }) => {
+  const circleRef = useRef<HTMLDivElement>(null);
 
-export { Circle };
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent): void => {
+      if (!circleRef.current) return;
+      const { clientX, clientY } = e;
+      const { left, top, width, height } = circleRef.current.getBoundingClientRect();
+      const x = clientX - left - width / 2;
+      const y = clientY - top - height / 2;
+      const angle = Math.atan2(y, x) * (180 / Math.PI);
+      const rotation = angle + 90;
+      circleRef.current.style.transform = `rotate(${rotation}deg)`;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseLeave = (): void => {
+      if (!circleRef.current) return;
+      circleRef.current.style.transform = "rotate(0deg)";
+    };
+
+    window.addEventListener("mouseleave", handleMouseLeave);
+    return () => window.removeEventListener("mouseleave", handleMouseLeave);
+  }, []);
+
+  return (
+    <div
+      ref={circleRef}
+      className={`w-[200px] h-[200px] rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center ${className}`}
+    >
+      {children}
+    </div>
+  );
+};
+
+Circle.displayName = "Circle";
+
+export default Circle;
